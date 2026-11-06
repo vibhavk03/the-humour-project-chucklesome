@@ -1,0 +1,391 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+      "Segoe UI Symbol";
+    --radius: 0.65rem;
+    --background: 0 30% 98%;
+    --foreground: 210 16% 18%;
+    --card: 0 35% 99%;
+    --card-foreground: 210 16% 18%;
+    --popover: 0 35% 99%;
+    --popover-foreground: 210 16% 18%;
+    --primary: 0 63% 32%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 20% 94%;
+    --secondary-foreground: 210 16% 22%;
+    --muted: 0 16% 92%;
+    --muted-foreground: 210 10% 40%;
+    --accent: 29 86% 55%;
+    --accent-foreground: 210 12% 12%;
+    --destructive: 0 72% 52%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 18% 88%;
+    --input: 0 18% 88%;
+    --ring: 0 63% 32%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --sidebar-background: 0 28% 97%;
+    --sidebar-foreground: 210 14% 28%;
+    --sidebar-primary: 0 63% 32%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 0 26% 93%;
+    --sidebar-accent-foreground: 210 12% 18%;
+    --sidebar-border: 0 18% 88%;
+    --sidebar-ring: 0 63% 32%;
+    --page-gradient: radial-gradient(1200px 600px at 8% -10%, hsl(29 86% 55% / 0.22), transparent 55%),
+      radial-gradient(900px 500px at 110% 0%, hsl(0 63% 32% / 0.18), transparent 50%);
+  }
+
+  .dark {
+    --background: 0 14% 9%;
+    --foreground: 30 20% 96%;
+    --card: 0 12% 12%;
+    --card-foreground: 30 20% 96%;
+    --popover: 0 12% 12%;
+    --popover-foreground: 30 20% 96%;
+    --primary: 0 63% 42%;
+    --primary-foreground: 210 15% 10%;
+    --secondary: 0 10% 18%;
+    --secondary-foreground: 30 20% 96%;
+    --muted: 0 10% 18%;
+    --muted-foreground: 30 12% 72%;
+    --accent: 29 86% 60%;
+    --accent-foreground: 210 15% 10%;
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 30 20% 96%;
+    --border: 0 12% 20%;
+    --input: 0 12% 20%;
+    --ring: 0 63% 42%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 0 12% 11%;
+    --sidebar-foreground: 30 18% 90%;
+    --sidebar-primary: 0 63% 42%;
+    --sidebar-primary-foreground: 210 15% 10%;
+    --sidebar-accent: 0 10% 18%;
+    --sidebar-accent-foreground: 30 20% 96%;
+    --sidebar-border: 0 12% 20%;
+    --sidebar-ring: 0 63% 42%;
+    --page-gradient: radial-gradient(1000px 500px at 10% -10%, hsl(29 86% 60% / 0.16), transparent 55%),
+      radial-gradient(900px 500px at 110% 0%, hsl(0 63% 42% / 0.18), transparent 50%);
+  }
+
+  :root[data-env="non-production"] {
+    --background: 210 24% 98%;
+    --foreground: 222 20% 18%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 20% 18%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 20% 18%;
+    --primary: 221 73% 45%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 210 18% 94%;
+    --secondary-foreground: 222 16% 24%;
+    --muted: 210 14% 92%;
+    --muted-foreground: 215 12% 44%;
+    --accent: 45 92% 50%;
+    --accent-foreground: 24 20% 12%;
+    --destructive: 0 72% 52%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 210 18% 88%;
+    --input: 210 18% 88%;
+    --ring: 221 73% 45%;
+    --chart-1: 221 70% 50%;
+    --chart-2: 168 60% 40%;
+    --chart-3: 32 85% 55%;
+    --chart-4: 48 90% 60%;
+    --chart-5: 200 80% 45%;
+    --sidebar-background: 210 22% 96%;
+    --sidebar-foreground: 222 14% 30%;
+    --sidebar-primary: 221 73% 45%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 210 22% 92%;
+    --sidebar-accent-foreground: 222 16% 22%;
+    --sidebar-border: 210 18% 88%;
+    --sidebar-ring: 221 73% 45%;
+    --page-gradient: radial-gradient(1200px 600px at 8% -10%, hsl(45 92% 50% / 0.16), transparent 55%),
+      radial-gradient(900px 500px at 110% 0%, hsl(221 73% 45% / 0.18), transparent 50%);
+  }
+
+  :root[data-env="non-production"].dark {
+    --background: 222 20% 10%;
+    --foreground: 210 20% 96%;
+    --card: 222 18% 13%;
+    --card-foreground: 210 20% 96%;
+    --popover: 222 18% 13%;
+    --popover-foreground: 210 20% 96%;
+    --primary: 221 80% 60%;
+    --primary-foreground: 222 20% 12%;
+    --secondary: 222 14% 18%;
+    --secondary-foreground: 210 20% 96%;
+    --muted: 222 12% 18%;
+    --muted-foreground: 210 16% 72%;
+    --accent: 45 90% 60%;
+    --accent-foreground: 222 20% 12%;
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 210 20% 96%;
+    --border: 222 14% 20%;
+    --input: 222 14% 20%;
+    --ring: 221 80% 60%;
+    --chart-1: 221 70% 55%;
+    --chart-2: 168 60% 45%;
+    --chart-3: 32 90% 55%;
+    --chart-4: 48 90% 60%;
+    --chart-5: 200 80% 50%;
+    --sidebar-background: 222 18% 12%;
+    --sidebar-foreground: 210 18% 90%;
+    --sidebar-primary: 221 80% 60%;
+    --sidebar-primary-foreground: 222 20% 12%;
+    --sidebar-accent: 222 14% 18%;
+    --sidebar-accent-foreground: 210 20% 96%;
+    --sidebar-border: 222 14% 20%;
+    --sidebar-ring: 221 80% 60%;
+    --page-gradient: radial-gradient(1000px 500px at 10% -10%, hsl(45 90% 60% / 0.14), transparent 55%),
+      radial-gradient(900px 500px at 110% 0%, hsl(221 80% 60% / 0.2), transparent 50%);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body {
+    @apply overflow-x-hidden;
+  }
+
+  @supports (scrollbar-gutter: stable) {
+    html {
+      scrollbar-gutter: stable;
+    }
+
+    body[data-scroll-locked] {
+      padding-right: 0 !important;
+      margin-right: 0 !important;
+    }
+  }
+
+  body {
+    @apply text-foreground antialiased;
+    font-family: var(--font-sans), system-ui, sans-serif;
+    background-color: hsl(var(--background));
+    background-image: var(--page-gradient);
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-sans), system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  code,
+  pre,
+  kbd,
+  samp,
+  button,
+  input,
+  textarea,
+  select {
+    font-family: inherit;
+  }
+}
+
+@layer components {
+  .page-shell {
+    @apply w-full space-y-6;
+  }
+
+  .page-header {
+    @apply flex flex-col gap-2;
+  }
+
+  .page-title {
+    @apply text-2xl font-semibold tracking-tight text-foreground sm:text-3xl;
+  }
+
+  .page-subtitle {
+    @apply text-sm text-muted-foreground sm:text-base;
+  }
+
+  .page-card {
+    @apply rounded-2xl border border-border/70 bg-card/85 p-6 shadow-sm backdrop-blur;
+  }
+
+  .surface-card {
+    @apply rounded-xl border border-border/60 bg-card/80 p-6 shadow-sm;
+  }
+
+  .table-shell {
+    @apply overflow-hidden rounded-xl border border-border/70 bg-card/80 shadow-sm;
+  }
+
+  .table-base {
+    @apply text-sm divide-y divide-border;
+  }
+
+  .table-base th {
+    @apply px-4 py-3 font-medium text-left;
+  }
+
+  .table-base td {
+    @apply px-4 py-3 align-middle;
+  }
+
+  .table-head {
+    @apply bg-secondary/60 text-muted-foreground text-xs uppercase tracking-wider font-medium;
+  }
+
+  .timezone-select {
+    @apply relative grid gap-2;
+  }
+
+  .timezone-select__label {
+    @apply text-sm font-semibold;
+  }
+
+  .timezone-select__control {
+    @apply flex items-center gap-2 w-full min-h-[40px] px-3 py-1.5 rounded-md border;
+    border-color: hsl(var(--sidebar-border));
+    background: hsl(var(--sidebar-background));
+    color: hsl(var(--sidebar-foreground));
+    transition: transform 0.2s ease, border-color 0.2s ease,
+      background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .timezone-select__control:hover {
+    transform: translateY(-1px);
+    background-color: hsl(var(--sidebar-accent));
+    border-color: hsl(var(--sidebar-border));
+    color: hsl(var(--sidebar-accent-foreground));
+  }
+
+  .timezone-select__control:focus-within {
+    outline: 2px solid hsl(var(--sidebar-ring));
+    outline-offset: 2px;
+  }
+
+  .timezone-select__input {
+    font: inherit;
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: currentColor;
+  }
+
+  @supports (-webkit-touch-callout: none) {
+    .timezone-select__input {
+      font-size: 16px;
+    }
+  }
+
+  .timezone-select__input::placeholder {
+    color: hsl(var(--muted-foreground));
+  }
+
+  .timezone-select__input:focus {
+    outline: none;
+  }
+
+  .timezone-select__toggle {
+    font: inherit;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: currentColor;
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+
+  .timezone-select__toggle:hover {
+    color: hsl(var(--sidebar-primary));
+  }
+
+  .timezone-select__toggle:focus-visible {
+    outline: 2px solid hsl(var(--sidebar-ring));
+    outline-offset: 2px;
+  }
+
+  .timezone-select__icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+    transition: transform 0.2s ease;
+  }
+
+  .timezone-select__icon.is-open {
+    transform: rotate(180deg);
+  }
+
+  .timezone-select__list {
+    margin-top: 8px;
+    max-height: 240px;
+    overflow-y: auto;
+    border-radius: 18px;
+    border: 1px solid hsl(var(--sidebar-border));
+    background: hsl(var(--sidebar-background));
+    box-shadow: 0 12px 24px hsl(var(--foreground) / 0.08);
+    padding: 6px;
+    display: grid;
+    gap: 4px;
+  }
+
+  .timezone-select__option {
+    font: inherit;
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 12px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: hsl(var(--sidebar-foreground));
+    transition: background-color 0.2s ease, color 0.2s ease;
+    cursor: pointer;
+  }
+
+  .timezone-select__option:hover {
+    background: hsl(var(--sidebar-accent));
+    color: hsl(var(--sidebar-accent-foreground));
+  }
+
+  .timezone-select__option.is-active {
+    background: hsl(var(--sidebar-accent));
+    color: hsl(var(--sidebar-foreground));
+  }
+
+  .timezone-select__option.is-selected {
+    background: hsl(var(--sidebar-primary));
+    color: hsl(var(--sidebar-primary-foreground));
+  }
+
+  .timezone-select__empty {
+    padding: 8px 10px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: hsl(var(--muted-foreground));
+  }
+}
