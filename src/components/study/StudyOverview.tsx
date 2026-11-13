@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { StudyAnalytics } from '@/services/study-results.service'
+import StudyRatingOpportunities from '@/components/study/StudyRatingOpportunities'
 
 export default function StudyOverview({ analytics }: { analytics: StudyAnalytics }) {
   const { rows, overview } = analytics
@@ -12,13 +13,14 @@ export default function StudyOverview({ analytics }: { analytics: StudyAnalytics
       <div className="space-y-1">
         <h2 id="study-overview-heading" className="text-xl font-semibold">Study overview</h2>
         <p className="text-sm text-muted-foreground">
-          All metrics use each participant’s latest rating per caption in this study.
-          Participants are people who submitted a counted rating.
+          Rating counts use each participant’s latest rating per caption in this study.
+          Opportunity estimates also include recorded starters who have not rated any captions.
         </p>
       </div>
+      <StudyRatingOpportunities analytics={analytics} />
       <dl className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-lg border bg-background p-4">
-          <dt className="text-sm text-muted-foreground">Unique participants</dt>
+          <dt className="text-sm text-muted-foreground">Participants who rated</dt>
           <dd className="mt-2 text-3xl font-semibold tabular-nums">{overview.uniqueParticipants.toLocaleString()}</dd>
           <dd className="mt-2 text-xs text-muted-foreground">Across {overview.totalRatings.toLocaleString()} counted ratings</dd>
         </div>
@@ -49,7 +51,7 @@ export default function StudyOverview({ analytics }: { analytics: StudyAnalytics
       <div className="grid gap-4 lg:grid-cols-2">
         <section aria-labelledby="study-rating-distribution-heading" className="rounded-lg border bg-background p-4">
           <h3 id="study-rating-distribution-heading" className="font-semibold">Rating distribution</h3>
-          <p className="mb-4 mt-1 text-xs text-muted-foreground">Count and share of all counted ratings for each response.</p>
+          <p className="mb-4 mt-1 text-xs text-muted-foreground">Count and share of Funny and Not funny ratings.</p>
           <ul className="space-y-3">
             {overview.distribution.map(bucket => (
               <li key={bucket.value}>

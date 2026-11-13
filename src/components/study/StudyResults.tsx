@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardTitle, CardDescription } from '@/components/ui/card'
 import { StudyResultsService, type StudyAnalytics } from '@/services/study-results.service'
 import StudyOverview from '@/components/study/StudyOverview'
+import StudyFlavorBreakdown, { FLAVOR_SOURCE_LABELS } from '@/components/study/StudyFlavorBreakdown'
+import CaptionThumbnail from '@/components/study/CaptionThumbnail'
 
 const PAGE_SIZE = 20
 
@@ -49,9 +51,9 @@ export default function StudyResults({ studyId }: { studyId: number }) {
           <div className="space-y-2">
             <CardTitle>Study results</CardTitle>
             <CardDescription>
-              Funny % is the share of ratings marked “funny” or “very funny”.
+              The caption leaderboard’s Funny % is the share of ratings given that were marked Funny.
               Each participant’s latest rating per caption in this study counts once.
-              All six rating choices count toward the total.
+              Ratings are grouped as Funny or Not funny.
             </CardDescription>
           </div>
           <Button variant="outline" disabled={loading} onClick={reload}>
@@ -71,6 +73,7 @@ export default function StudyResults({ studyId }: { studyId: number }) {
         ) : analytics ? (
           <>
             <StudyOverview analytics={analytics} />
+            <StudyFlavorBreakdown analytics={analytics} />
             <h2 className="border-t pt-4 text-xl font-semibold">Caption leaderboard</h2>
             {!rows.length ? (
               <p className="py-8 text-center text-sm text-muted-foreground">No captions are attached to this study yet.</p>
@@ -85,6 +88,7 @@ export default function StudyResults({ studyId }: { studyId: number }) {
                 <thead>
                   <tr>
                     <th scope="col">Id</th>
+                    <th scope="col">Image</th>
                     <th scope="col">Caption</th>
                     <th scope="col">Humor flavor</th>
                     <th scope="col" className="text-right">Total ratings</th>
@@ -97,8 +101,14 @@ export default function StudyResults({ studyId }: { studyId: number }) {
                       <td className="font-sans text-xs">
                         <Link className="text-primary underline underline-offset-4" href={`/caption/${row.captionId}`}>{row.captionId}</Link>
                       </td>
+                      <td>
+                        <CaptionThumbnail imageId={row.imageId} url={row.imageUrl} description={row.imageDescription} />
+                      </td>
                       <td className="min-w-64 max-w-xl whitespace-pre-wrap break-words">{row.content}</td>
-                      <td>{row.flavor}</td>
+                      <td>
+                        {row.flavor}
+                        <span className="mt-1 block text-xs text-muted-foreground">{FLAVOR_SOURCE_LABELS[row.attribution.source]}</span>
+                      </td>
                       <td className="text-right tabular-nums">{row.totalRatings}</td>
                       <td className="whitespace-nowrap text-right tabular-nums">
                         {row.funnyPercent === null ? 'No ratings' : `${row.funnyPercent.toFixed(1)}%`}

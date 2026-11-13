@@ -11,27 +11,108 @@ export type ResultCaption = {
     content: string | null
     humor_flavor_id: number | null
     humor_flavors: { slug: string } | null
+    metadata?: Database['public']['Tables']['captions']['Row']['metadata']
+    image_id?: string
+    images?: { url: string | null; image_description: string | null } | null
   } | null
 }
 export type CaptionResult = {
   captionId: string
   content: string
+  imageId: string | null
+  imageUrl: string | null
+  imageDescription: string | null
   flavor: string
   totalRatings: number
   funnyPercent: number | null
+  attribution: FlavorAttribution
+}
+
+export type FlavorSource = 'direct' | 'imported' | 'unknown'
+export type FlavorAttribution = {
+  key: string
+  source: FlavorSource
+  label: string
+  flavorId: number | null
+  importedId: string | null
+}
+type RatingDistribution = Array<{ value: string; label: string; count: number; percent: number }>
+export type FlavorSummary = {
+  attribution: FlavorAttribution
+  captions: number
+  ratedCaptions: number
+  coveragePercent: number
+  uniqueParticipants: number
+  totalRatings: number
+  distribution: RatingDistribution
+}
+
+// Imported IDs belong to the source dataset. Never join them to this project's
+// flavor IDs or merge their labels with directly recorded flavor groups.
+export function resolveStudyFlavor(caption: ResultCaption['captions']): FlavorAttribution {
+  if (caption?.humor_flavor_id != null) {
+    return { key: `direct:${caption.humor_flavor_id}`, source: 'direct',
+      label: caption.humor_flavors?.slug || `Flavor ${caption.humor_flavor_id}`,
+      flavorId: caption.humor_flavor_id, importedId: null }
+  }
+  const metadata = caption?.metadata
+  if (metadata && typeof metadata === 'object' && !Array.isArray(metadata)) {
+    const name = typeof metadata.flavor_name === 'string' ? metadata.flavor_name.trim() : ''
+    const rawId = metadata.flavor_id
+    const importedId = (typeof rawId === 'number' && Number.isSafeInteger(rawId) && rawId > 0) ||
+      (typeof rawId === 'string' && /^[1-9]\d*$/.test(rawId.trim())) ? String(rawId).trim() : null
+    if (name || importedId) {
+      return { key: `imported:${JSON.stringify([name || null, importedId])}`, source: 'imported',
+        label: name || `Imported flavor ${importedId}`, flavorId: null, importedId }
+    }
+  }
+  return { key: 'unknown', source: 'unknown', label: 'Unknown', flavorId: null, importedId: null }
 }
 
 export const STUDY_RATING_CHOICES = [
-  { value: 'didnt get it', label: 'Didn’t get it' },
-  { value: 'not funny at all', label: 'Not funny at all' },
-  { value: 'not very funny', label: 'Not very funny' },
-  { value: 'meh', label: 'Meh' },
   { value: 'funny', label: 'Funny' },
-  { value: 'very funny', label: 'Very funny' },
+  { value: 'not funny', label: 'Not funny' },
 ] as const
+
+// The voting experience is binary. Normalize the older enum labels on read so
+// historical records use the same two categories without rewriting saved data.
+function studyRatingCategory(value: string): 'funny' | 'not funny' | null {
+  switch (value.trim().toLowerCase()) {
+    case 'funny':
+    case 'very funny':
+      return 'funny'
+    case 'not funny':
+    case 'not funny at all':
+    case 'not very funny':
+    case 'meh':
+    case 'didnt get it':
+    case "didn't get it":
+      return 'not funny'
+    default:
+      return null
+  }
+}
 
 export type StudyAnalytics = {
   rows: CaptionResult[]
+  opportunities: {
+    availableCaptions: number
+    observedParticipants: number
+    participationAvailable: boolean
+    potentialRatings: number | null
+    ratingsGiven: number
+    funnyRatings: number
+    notFunnyRatings: number
+    otherRatings: number
+    potentialUnrated: number | null
+    ratingCoveragePercent: number | null
+    funnyOfPotentialPercent: number | null
+    funnyOfRatedPercent: number | null
+  }
+  flavors: {
+    coverage: Array<{ source: FlavorSource; captions: number; percent: number | null }>
+    groups: FlavorSummary[]
+  }
   overview: {
     uniqueParticipants: number
     totalRatings: number
@@ -39,7 +120,7 @@ export type StudyAnalytics = {
     ratedCaptions: number
     coveragePercent: number | null
     ratingsPerCaption: { average: number | null; median: number | null; min: number | null; max: number | null }
-    distribution: Array<{ value: string; label: string; count: number; percent: number }>
+    distribution: RatingDistribution
   }
 }
 
@@ -73,12 +154,16 @@ function leaderboardFromLatest(captions: ResultCaption[], ratings: StudyRating[]
   const uniqueCaptions = new Map(captions.map(caption => [caption.caption_id, caption]))
   return [...uniqueCaptions.values()].map(caption => {
     const votes = byCaption.get(caption.caption_id) ?? []
-    const funny = votes.filter(vote => vote.vote_value === 'funny' || vote.vote_value === 'very funny').length
-    const flavorId = caption.captions?.humor_flavor_id
+    const funny = votes.filter(vote => studyRatingCategory(vote.vote_value) === 'funny').length
+    const attribution = resolveStudyFlavor(caption.captions)
     return {
       captionId: caption.caption_id,
       content: caption.captions?.content ?? 'Caption unavailable',
-      flavor: caption.captions?.humor_flavors?.slug || (flavorId != null ? `Flavor ${flavorId}` : 'Unknown'),
+      imageId: caption.captions?.image_id ?? null,
+      imageUrl: caption.captions?.images?.url ?? null,
+      imageDescription: caption.captions?.images?.image_description ?? null,
+      flavor: attribution.label,
+      attribution,
       totalRatings: votes.length,
       funnyPercent: votes.length ? funny / votes.length * 100 : null,
     }
@@ -90,22 +175,68 @@ export function buildStudyLeaderboard(captions: ResultCaption[], ratings: StudyR
   return leaderboardFromLatest(captions, latestStudyRatings(captions, ratings))
 }
 
-export function buildStudyAnalytics(captions: ResultCaption[], ratings: StudyRating[]): StudyAnalytics {
-  const latest = latestStudyRatings(captions, ratings)
-  const rows = leaderboardFromLatest(captions, latest)
-  const counts = rows.map(row => row.totalRatings).sort((a, b) => a - b)
-  const totalRatings = latest.length
-  const ratedCaptions = counts.filter(count => count > 0).length
+function ratingDistribution(ratings: StudyRating[]): RatingDistribution {
+  const totalRatings = ratings.length
   const distribution = STUDY_RATING_CHOICES.map(choice => ({
-    ...choice, count: latest.filter(rating => rating.vote_value === choice.value).length,
+    ...choice, count: ratings.filter(rating => studyRatingCategory(rating.vote_value) === choice.value).length,
   }))
   const unrecognized = totalRatings - distribution.reduce((total, choice) => total + choice.count, 0)
   const buckets: Array<{ value: string; label: string; count: number }> = [...distribution]
   // Preserve unexpected stored values in the denominator and make them visible.
   if (unrecognized > 0) buckets.push({ value: 'other', label: 'Other / unrecognized', count: unrecognized })
+  return buckets.map(choice => ({ ...choice, percent: totalRatings ? choice.count / totalRatings * 100 : 0 }))
+}
+
+// Participation IDs add recorded starters who have not submitted any ratings.
+// null means participation could not be loaded; do not invent a denominator.
+export function buildStudyAnalytics(captions: ResultCaption[], ratings: StudyRating[], participationIds: string[] | null = []): StudyAnalytics {
+  const latest = latestStudyRatings(captions, ratings)
+  const rows = leaderboardFromLatest(captions, latest)
+  const counts = rows.map(row => row.totalRatings).sort((a, b) => a - b)
+  const totalRatings = latest.length
+  const participants = new Set([...latest.map(rating => rating.profile_id), ...(participationIds ?? [])])
+  const potentialRatings = rows.length === 0 ? 0 : participationIds === null ? null : rows.length * participants.size
+  const funnyRatings = latest.filter(rating => studyRatingCategory(rating.vote_value) === 'funny').length
+  const notFunnyRatings = latest.filter(rating => studyRatingCategory(rating.vote_value) === 'not funny').length
+  const ratedCaptions = counts.filter(count => count > 0).length
+  const groups = new Map<string, { attribution: FlavorAttribution; rows: CaptionResult[]; ratings: StudyRating[] }>()
+  const groupByCaption = new Map<string, string>()
+  for (const row of rows) {
+    const group = groups.get(row.attribution.key) ?? { attribution: row.attribution, rows: [], ratings: [] }
+    group.rows.push(row)
+    groups.set(row.attribution.key, group)
+    groupByCaption.set(row.captionId, row.attribution.key)
+  }
+  for (const rating of latest) groups.get(groupByCaption.get(rating.caption_id)!)!.ratings.push(rating)
+  const flavorGroups: FlavorSummary[] = [...groups.values()].map(group => {
+    const rated = group.rows.filter(row => row.totalRatings > 0).length
+    return { attribution: group.attribution, captions: group.rows.length, ratedCaptions: rated,
+      coveragePercent: rated / group.rows.length * 100,
+      uniqueParticipants: new Set(group.ratings.map(rating => rating.profile_id)).size,
+      totalRatings: group.ratings.length, distribution: ratingDistribution(group.ratings) }
+  }).sort((a, b) => b.captions - a.captions || a.attribution.key.localeCompare(b.attribution.key))
+  const coverage = (['direct', 'imported', 'unknown'] as const).map(source => {
+    const count = rows.filter(row => row.attribution.source === source).length
+    return { source, captions: count, percent: rows.length ? count / rows.length * 100 : null }
+  })
   const middle = Math.floor(counts.length / 2)
   return {
     rows,
+    opportunities: {
+      availableCaptions: rows.length,
+      observedParticipants: participants.size,
+      participationAvailable: participationIds !== null,
+      potentialRatings,
+      ratingsGiven: totalRatings,
+      funnyRatings,
+      notFunnyRatings,
+      otherRatings: totalRatings - funnyRatings - notFunnyRatings,
+      potentialUnrated: potentialRatings === null ? null : potentialRatings - totalRatings,
+      ratingCoveragePercent: potentialRatings ? totalRatings / potentialRatings * 100 : null,
+      funnyOfPotentialPercent: potentialRatings ? funnyRatings / potentialRatings * 100 : null,
+      funnyOfRatedPercent: totalRatings ? funnyRatings / totalRatings * 100 : null,
+    },
+    flavors: { coverage, groups: flavorGroups },
     overview: {
       uniqueParticipants: new Set(latest.map(rating => rating.profile_id)).size,
       totalRatings,
@@ -118,7 +249,7 @@ export function buildStudyAnalytics(captions: ResultCaption[], ratings: StudyRat
         min: counts[0] ?? null,
         max: counts.at(-1) ?? null,
       },
-      distribution: buckets.map(choice => ({ ...choice, percent: totalRatings ? choice.count / totalRatings * 100 : 0 })),
+      distribution: ratingDistribution(latest),
     },
   }
 }
@@ -167,13 +298,13 @@ export const StudyResultsService = {
     for (let offset = 0; ; offset += PAGE_SIZE) {
       signal.throwIfAborted()
       const { data, error } = await supabase.from('study_caption_mappings')
-        .select('id, caption_id, captions(content, humor_flavor_id, humor_flavors:humor_flavor_id(slug))')
+        .select('id, caption_id, captions(content, image_id, images(url, image_description), humor_flavor_id, metadata, humor_flavors:humor_flavor_id(slug))')
         .eq('study_id', studyId).order('id').range(offset, offset + PAGE_SIZE - 1).abortSignal(signal)
       if (error) throw new Error(`Could not load study captions: ${error.message}`)
       captions.push(...(data ?? []))
       if (!data || data.length < PAGE_SIZE) break
     }
-    if (!captions.length) return buildStudyAnalytics([], [])
+    if (!captions.length) return buildStudyAnalytics([], [], null)
     const ratings: StudyRating[] = []
     for (let offset = 0; ; offset += PAGE_SIZE) {
       signal.throwIfAborted()
@@ -185,7 +316,23 @@ export const StudyResultsService = {
       ratings.push(...(data ?? []))
       if (!data || data.length < PAGE_SIZE) break
     }
+    let participationIds: string[] | null = []
+    try {
+      for (let offset = 0; ; offset += PAGE_SIZE) {
+        signal.throwIfAborted()
+        const { data, error } = await supabase.from('study_participations')
+          .select('profile_id').eq('study_id', studyId).order('profile_id')
+          .range(offset, offset + PAGE_SIZE - 1).abortSignal(signal)
+        if (error) throw error
+        participationIds.push(...(data ?? []).map(row => row.profile_id))
+        if (!data || data.length < PAGE_SIZE) break
+      }
+    } catch {
+      // Existing results stay useful when optional participation data is missing.
+      // An unsuccessful read must not masquerade as an empty participant cohort.
+      participationIds = null
+    }
     signal.throwIfAborted()
-    return buildStudyAnalytics(captions, ratings)
+    return buildStudyAnalytics(captions, ratings, participationIds)
   },
 }
